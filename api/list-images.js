@@ -8,37 +8,37 @@ cloudinary.config({
 });
 
 export default async function handler(req, res) {
-  // Add CORS headers so Fourthwall can fetch
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "*"); // CORS for Fourthwall
 
   try {
-    const folderPrefix = "art/"; // folder name with slash
-
-    const result = await cloudinary.api.resources({
+    // Step 1: get all images with tag "art"
+    const taggedResult = await cloudinary.api.resources_by_tag("art", {
       type: "upload",
-      prefix: folderPrefix,
       max_results: 100,
       direction: "desc",
-      sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
-    const images = result.resources.map(img => ({
-      url: cloudinary.url(img.public_id, { sign_url: true }),
-      public_id: img.public_id,
-      format: img.format,
-      tags: img.tags || []
+    // Step 2: fetch full resource info for each image to get its tags
+    const images = await Promise.all(taggedResult.resources.map(async img => {
+      const fullInfo = await cloudinary.api.resource(img.public_id, { type: "upload" });
+      return {
+        url: cloudinary.url(fullInfo.public_id, { sign_url: true }),
+        public_id: fullInfo.public_id,
+        format: fullInfo.format,
+        tags: fullInfo.tags || []
+      };
     }));
 
     res.status(200).json({
-      message: "Art folder images fetched",
+      message: "Art images fetched by tag",
       total: images.length,
-      images,
+      images
     });
   } catch (error) {
     console.error("Cloudinary error:", error);
     res.status(500).json({
       error: "Failed to fetch images from Cloudinary",
-      details: error.message,
+      details: error.message
     });
   }
 }
