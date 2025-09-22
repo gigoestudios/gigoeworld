@@ -8,31 +8,35 @@ cloudinary.config({
 });
 
 export default async function handler(req, res) {
+  // Add CORS headers so Fourthwall can fetch
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
   try {
-    const result = await cloudinary.api.resources_by_tag("art", {
+    const folderPrefix = "art"; // pull all images with tag 'art'
+
+    const result = await cloudinary.api.resources_by_tag(folderPrefix, {
       type: "upload",
       max_results: 100,
       direction: "desc",
-      sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
     const images = result.resources.map(img => ({
       url: cloudinary.url(img.public_id, { sign_url: true }),
-      tags: (img.tags || []).filter(t => t !== "art"), // default to [] if undefined
       public_id: img.public_id,
-      format: img.format
+      format: img.format,
+      tags: img.tags
     }));
 
     res.status(200).json({
       message: "Art images fetched by tag",
       total: images.length,
-      images
+      images,
     });
   } catch (error) {
     console.error("Cloudinary error:", error);
     res.status(500).json({
       error: "Failed to fetch images from Cloudinary",
-      details: error.message
+      details: error.message,
     });
   }
 }
