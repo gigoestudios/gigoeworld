@@ -12,23 +12,25 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   try {
-    const folderPrefix = "art"; // pull all images with tag 'art'
+    const folderPrefix = "art/"; // folder name with slash
 
-    const result = await cloudinary.api.resources_by_tag(folderPrefix, {
+    const result = await cloudinary.api.resources({
       type: "upload",
+      prefix: folderPrefix,
       max_results: 100,
       direction: "desc",
+      sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
     const images = result.resources.map(img => ({
       url: cloudinary.url(img.public_id, { sign_url: true }),
       public_id: img.public_id,
       format: img.format,
-      tags: img.tags
+      tags: img.tags || []
     }));
 
     res.status(200).json({
-      message: "Art images fetched by tag",
+      message: "Art folder images fetched",
       total: images.length,
       images,
     });
