@@ -1,12 +1,34 @@
-export default function handler(req, res) {
-  res.status(200).json([
-    {
-      url: "https://res.cloudinary.com/demo/image/upload/w_600/sample.jpg",
-      tags: ["art", "charcoal"]
-    },
-    {
-      url: "https://res.cloudinary.com/demo/image/upload/w_600/kitten.jpg",
-      tags: ["photography", "animals"]
-    }
-  ]);
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure via environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export default async function handler(req, res) {
+  try {
+    // List all images in the folder "/art"
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "art/", // folder name
+      max_results: 500, // adjust as needed
+    });
+
+    // Map to simple JSON for frontend
+    const images = result.resources.map(img => ({
+      url: img.secure_url,
+      tags: img.tags,
+      created_at: img.created_at
+    }));
+
+    // Sort newest first
+    images.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    res.status(200).json(images);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch images" });
+  }
 }
