@@ -9,18 +9,16 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
-    // Fetch all images with the 'art' tag
     const result = await cloudinary.api.resources_by_tag("art", {
       type: "upload",
-      max_results: 100, // adjust as needed
+      max_results: 100,
       direction: "desc",
       sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
-    // Map results, removing the 'art' tag from returned tags
     const images = result.resources.map(img => ({
       url: cloudinary.url(img.public_id, { sign_url: true }),
-      tags: img.tags.filter(t => t !== "art"), // exclude 'art' tag
+      tags: (img.tags || []).filter(t => t !== "art"), // default to [] if undefined
       public_id: img.public_id,
       format: img.format
     }));
