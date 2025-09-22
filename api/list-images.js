@@ -9,17 +9,17 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
-    // Just fetch all uploads (no prefix yet) to verify the connection
+    // Fetch resources in the "art" folder
     const result = await cloudinary.api.resources({
       type: "upload",
-      max_results: 10,  // small number for testing
+      prefix: "art/",   // folder name
+      max_results: 100, // adjust as needed
       direction: "desc",
       sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
-    // Return some debug info
     const images = result.resources.map(img => ({
-      url: img.secure_url,
+      url: cloudinary.url(img.public_id, { sign_url: true }),
       tags: img.tags,
       folder: img.folder,
       public_id: img.public_id,
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     }));
 
     res.status(200).json({
-      message: "Cloudinary connection verified",
+      message: "Art folder images fetched",
       total: result.total_count,
       images
     });
