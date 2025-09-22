@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     let images = [];
     let nextCursor = undefined;
-    const folderPrefix = "art/"; // your folder
+    const folderPrefix = "art"; // your folder
 
     do {
       const result = await cloudinary.api.resources({
