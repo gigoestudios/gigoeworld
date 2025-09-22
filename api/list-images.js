@@ -10,8 +10,9 @@ cloudinary.config({
 export default async function handler(req, res) {
   try {
     let images = [];
-    let nextCursor = undefined;
-    const folderPrefix = "art"; // your folder name in Cloudinary
+    let nextCursor;
+
+    const folderPrefix = "art"; // exactly as confirmed
 
     do {
       const result = await cloudinary.api.resources({
@@ -23,13 +24,13 @@ export default async function handler(req, res) {
         sort_by: [{ field: "created_at", direction: "desc" }],
       });
 
-      // Map each resource to include signed URL
       const mapped = result.resources.map(img => ({
-        url: cloudinary.url(img.public_id, { sign_url: true }),
+        url: cloudinary.url(img.public_id, { sign_url: true }), // signed for private folder
         public_id: img.public_id,
-        format: img.format,
         tags: img.tags,
         folder: img.folder,
+        format: img.format,
+        type: img.type
       }));
 
       images = images.concat(mapped);
@@ -39,13 +40,10 @@ export default async function handler(req, res) {
     res.status(200).json({
       message: "Art folder images fetched",
       total: images.length,
-      images,
+      images
     });
   } catch (error) {
     console.error("Cloudinary error:", error);
-    res.status(500).json({
-      error: "Failed to fetch images from Cloudinary",
-      details: error.message,
-    });
+    res.status(500).json({ error: error.message });
   }
 }
