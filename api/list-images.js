@@ -1,6 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
 
-// Configure via environment variables
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -9,21 +8,18 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
-    // List all images in the folder "/art"
     const result = await cloudinary.api.resources({
       type: "upload",
-      prefix: "art/", // folder name
-      max_results: 500, // adjust as needed
+      prefix: "art/",
+      max_results: 500,
     });
 
-    // Map to simple JSON for frontend
     const images = result.resources.map(img => ({
       url: img.secure_url,
       tags: img.tags,
       created_at: img.created_at
     }));
 
-    // Sort newest first
     images.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     res.status(200).json(images);
