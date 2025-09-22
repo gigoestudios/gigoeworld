@@ -9,20 +9,23 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
+    // Fetch all uploads in the "art" folder
     const result = await cloudinary.api.resources({
-      type: "upload",
-      prefix: "art",          // folder name
+      type: "upload",     // standard upload type
+      prefix: "art",       // exact folder path
       max_results: 100,
       direction: "desc",
       sort_by: [{ field: "created_at", direction: "desc" }],
     });
 
+    // Map results to signed URLs so private/restricted images are accessible
     const images = result.resources.map(img => ({
       url: cloudinary.url(img.public_id, { sign_url: true }),
-      tags: img.tags || [],
       public_id: img.public_id,
       format: img.format,
       folder: img.folder,
+      tags: img.tags || [],
+      type: img.type,
     }));
 
     res.status(200).json({
@@ -30,8 +33,9 @@ export default async function handler(req, res) {
       total: images.length,
       images,
     });
-  } catch (error) {
-    console.error("Cloudinary fetch error:", error);
-    res.status(500).json({ error: error.message });
+
+  } catch (err) {
+    console.error("Cloudinary fetch error:", err);
+    res.status(500).json({ error: err.message });
   }
 }
