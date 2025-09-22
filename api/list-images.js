@@ -9,32 +9,21 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
-    let images = [];
-    let nextCursor = undefined;
-    const folderPrefix = "art"; // your folder name in Cloudinary
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "art",          // folder name
+      max_results: 100,
+      direction: "desc",
+      sort_by: [{ field: "created_at", direction: "desc" }],
+    });
 
-    do {
-      const result = await cloudinary.api.resources({
-        type: "upload",
-        prefix: folderPrefix,
-        max_results: 100,
-        next_cursor: nextCursor,
-        direction: "desc",
-        sort_by: [{ field: "created_at", direction: "desc" }],
-      });
-
-      const mapped = result.resources.map(img => ({
-        url: cloudinary.url(img.public_id, { sign_url: true }), // signed URL for restricted assets
-        tags: img.tags,
-        folder: img.folder,
-        public_id: img.public_id,
-        format: img.format,
-        type: img.type
-      }));
-
-      images = images.concat(mapped);
-      nextCursor = result.next_cursor;
-    } while (nextCursor);
+    const images = result.resources.map(img => ({
+      url: cloudinary.url(img.public_id, { sign_url: true }),
+      tags: img.tags || [],
+      public_id: img.public_id,
+      format: img.format,
+      folder: img.folder,
+    }));
 
     res.status(200).json({
       message: "Art folder images fetched",
@@ -42,10 +31,7 @@ export default async function handler(req, res) {
       images,
     });
   } catch (error) {
-    console.error("Cloudinary error:", error);
-    res.status(500).json({
-      error: "Failed to fetch images from Cloudinary",
-      details: error.message,
-    });
+    console.error("Cloudinary fetch error:", error);
+    res.status(500).json({ error: error.message });
   }
 }
