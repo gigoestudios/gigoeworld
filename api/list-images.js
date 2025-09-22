@@ -9,35 +9,28 @@ cloudinary.config({
 
 export default async function handler(req, res) {
   try {
-    let images = [];
-    let nextCursor = undefined;
-    const folderPrefix = "art"; // your folder
+    const result = await cloudinary.api.resources({
+      type: "upload",   // only uploaded images/videos
+      max_results: 20,  // just the first 20 for testing
+      direction: "desc",
+      sort_by: [{ field: "created_at", direction: "desc" }],
+    });
 
-    do {
-      const result = await cloudinary.api.resources({
-        type: "upload",
-        prefix: folderPrefix,
-        max_results: 100, // max per API call
-        next_cursor: nextCursor,
-        direction: "desc",
-        sort_by: [{ field: "created_at", direction: "desc" }],
-      });
+    // map basic info to see what's coming back
+    const images = result.resources.map(img => ({
+      url: cloudinary.url(img.public_id, { sign_url: true }),
+      public_id: img.public_id,
+      folder: img.folder,
+      format: img.format,
+      type: img.type,       // should be "upload"
+      tags: img.tags,
+    }));
 
-      const mapped = result.resources.map(img => ({
-        url: cloudinary.url(img.public_id, { sign_url: true }),
-        tags: img.tags,
-        folder: img.folder,
-        public_id: img.public_id,
-        format: img.format,
-      }));
-
-      images = images.concat(mapped);
-      nextCursor = result.next_cursor;
-    } while (nextCursor);
+    console.log("Fetched images:", images);
 
     res.status(200).json({
-      message: "Art folder images fetched",
-      total: images.length,
+      message: "Test fetch from Cloudinary",
+      total: result.total_count,
       images,
     });
   } catch (error) {
