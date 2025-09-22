@@ -12,13 +12,13 @@ export default async function handler(req, res) {
     // Fetch resources in the "art" folder
     const result = await cloudinary.api.resources({
       type: "upload",
-      prefix: "art/",   // make sure this matches exactly your folder in Cloudinary
+      prefix: "art/",  // ensure this matches your folder exactly
       max_results: 100, 
       direction: "desc",
     });
 
     const images = result.resources.map(img => ({
-      url: cloudinary.url(img.public_id, { sign_url: true }),
+      url: cloudinary.url(img.public_id, { sign_url: true }), // signed URL
       tags: img.tags,
       folder: img.folder,
       public_id: img.public_id,
