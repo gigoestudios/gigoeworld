@@ -10,11 +10,12 @@ cloudinary.config({
 export default async function handler(req, res) {
   try {
     // Fetch resources in the "art" folder
-    const result = await cloudinary.search
-      .expression('folder:art')
-      .sort_by('created_at','desc')
-      .max_results(100)
-      .execute();
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "art/",   // make sure this matches exactly your folder in Cloudinary
+      max_results: 100, 
+      direction: "desc",
+    });
 
     const images = result.resources.map(img => ({
       url: cloudinary.url(img.public_id, { sign_url: true }),
@@ -25,15 +26,11 @@ export default async function handler(req, res) {
     }));
 
     res.status(200).json({
-      message: "Art folder images fetched",
-      total: result.total_count,
+      message: "Cloudinary connection verified",
       images
     });
   } catch (error) {
     console.error("Cloudinary error:", error);
-    res.status(500).json({
-      error: "Failed to fetch images from Cloudinary",
-      details: error.message
-    });
+    res.status(500).json({ error: "Failed to fetch images from Cloudinary", details: error.message });
   }
 }
